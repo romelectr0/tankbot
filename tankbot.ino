@@ -125,7 +125,6 @@ void parralelfunction(boolean invert,boolean side,int timeabs) {
       dist[1] = timer/58;  
 }
 void avoidside(boolean side) {
-  if (dist[1] < 40) {
   if (dist[1] < 5) {
       motor.run(RELEASE); 
       motor2.run(RELEASE);
@@ -137,5 +136,4 @@ void avoidside(boolean side) {
       }
       delay(500);      
   }
- }  
 }
