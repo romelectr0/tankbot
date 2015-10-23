@@ -11,7 +11,7 @@ double cosangularecart = cos(angularecart);
 long ecartmax = cosangularecart*deplacementspeed;
 int trigpin = A0;
 int echopin = A1;
-int ecopinleft = A2;
+int echopinleft = A2;
 int echopinright = A3;
 long timer;
 long dist[2];
@@ -68,8 +68,8 @@ void loop() {
 
 void stayparralel (boolean side) {
   int pintoecho;
-  if (side) pintoecho = leftechopin;
-  if (!side) pintoecho = rightechopin;
+  if (side) pintoecho = echopinleft;
+  if (!side) pintoecho = echopinright;
   motor.run(FORWARD);  
   motor2.run(FORWARD);
   digitalWrite(trigpin,HIGH);
@@ -96,8 +96,8 @@ void stayparralel (boolean side) {
 void parralelfunction(boolean invert,boolean side,int timeabs) {
   boolean state;
   int pintoecho;
-  if (side) pintoecho = leftechopin;
-  if (!side) pintoecho = rightechopin;
+  if (side) pintoecho = echopinleft;
+  if (!side) pintoecho = echopinright;
   if (!invert) state = side;
   else state = !side;
       motor.run(RELEASE); 
@@ -138,18 +138,56 @@ void avoidside(boolean side) {
       delay(500);      
   }
 }
-void gotopoint(float x,float y) {;
+void gotopoint(float x,float y) {
   float destination[2];
   float polar[2];
   int timetorelease;
   int actualtime;
   destination[0] = x;
   destination[1] = y;
-  polar[0] = sqrt((destination[0]*destination[0])+(destination[1]*destination[1]));
-  polar[1] = acos(destination[0]/polar[0]);
-  robotangle(polar[1]);
-  timetorelease = robotgo(polar[1]);
-  actulatime = millis();
+  while(destination[0] == 0 && destination[1] == 0) {
+    polar[0] = sqrt((destination[0]*destination[0])+(destination[1]*destination[1]));
+    polar[1] = acos(destination[0]/polar[0]);
+    robotangle(polar[1]);
+    timetorelease = robotgo(polar[1]);
+    actualtime = actualtimer(timetorelease);
+    polar[0] = actualtime*0.002*deplacementspeed;
+    destination[0] = destination[0]-(polar[0]*cos(polar[1]));
+    destination[1] = destination[1]-(polar[0]*sin(polar[1]));
+    robotangle(360-polar[1]);
+    int pinecho;
+    int polarphiabs = fabs(polar[1]);
+    if ((polarphiabs % 360) < 180) pinecho = echopinleft;
+    else pinecho = echopinright; 
+    digitalWrite(trigpin,HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigpin,LOW);
+    timer = pulseIn(pinecho,HIGH);
+    dist[0] = timer/58;       
+    motor.run(FORWARD);
+    motor2.run(FORWARD);
+    destination[1] = destinationy(destination[1],pinecho);
+ } 
+}
+int robotangle(float angletodo) {
+}
+float robotgo(float distancetotravel) {
+}
+float destinationy (float olddestinationy,int pinecho) {
+    int actualtime = millis();    
+    while (true) {
+      digitalWrite(trigpin,HIGH);
+      delayMicroseconds(10);
+      digitalWrite(trigpin,LOW);
+      timer = pulseIn(pinecho,HIGH);
+      dist[1] = timer/58;
+      if ((dist[1]+5) < dist[0]) {
+       return(olddestinationy+actualtime*0.002*deplacementspeed);
+     } 
+   }
+}
+float actualtimer(int timetorelease) {
+  int actualtime = millis();
   while(true) {
   digitalWrite(trigpin,HIGH);
   delayMicroseconds(10);
@@ -160,19 +198,9 @@ void gotopoint(float x,float y) {;
     motor.run(RELEASE);
     motor2.run(RELEASE);
     break;
-  }
-  if ((actualtime-1000 < timetorelease) && (dist[0] < 18)) {
-    polar[0] = actualtime*0.002*deplacementspeed;
-    destination[0] = destination[0]-(polar[0]*cos(polar[1]));
-    destination[1] = destination[1]-(polar[0]*sin(polar[1]));
-    robotangle(360-polar[1]);
-        
+   }
+ else if ((actualtime-1000 < timetorelease) && (dist[0] < 18)) {
+    return(actualtime);
+   }
   }
  }
- actualtime = 0;
- 
-}
-int robotangle(float angletodo) {
-}
-void robotgo(float distancetotravel) {
-}
